@@ -3,7 +3,9 @@ package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.mappers;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionCreateDTO;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionDTO;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Region;
+import org.springframework.stereotype.Component;
 
+@Component
 public class RegionMapper {
 
     public RegionDTO toDTO(Region region) {

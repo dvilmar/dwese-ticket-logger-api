@@ -40,9 +40,6 @@ public class RegionController {
     @Autowired
     private RegionService regionService;
 
-    // @Autowired
-    // private MessageSource messageSource;
-
     /**
      * Lista todas las regiones almacenadas en la base de datos.
      *
