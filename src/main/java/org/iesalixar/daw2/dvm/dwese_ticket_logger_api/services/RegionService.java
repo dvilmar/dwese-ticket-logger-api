@@ -56,73 +56,39 @@ public class RegionService {
         }
     }
 
-    public ResponseEntity<?> createRegion(@Valid RegionCreateDTO regionCreateDTO, Locale locale) {
-        try {
-            logger.info("Creando una nueva región con código {}", regionCreateDTO.getCode());
-
-            if (regionRepository.existsByCode(regionCreateDTO.getCode())) {
-                String errorMessage = messageSource.getMessage("msg.region-controller.insert.codeExist", null, locale);
-                logger.warn("Error al crear región: El código {} ya existe.", regionCreateDTO.getCode());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-            }
-
-            Region region = regionMapper.toEntity(regionCreateDTO);
-            Region savedRegion = regionRepository.save(region);
-
-            logger.info("Región creada exitosamente con ID {}", savedRegion.getId());
-            return ResponseEntity.status(HttpStatus.CREATED).body(regionMapper.toDTO(savedRegion));
-        } catch (Exception e) {
-            logger.error("Error al crear la región: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la región.");
+    public RegionDTO createRegion(RegionCreateDTO regionCreateDTO, Locale locale) {
+        if (regionRepository.existsByCode(regionCreateDTO.getCode())) {
+            String errorMessage = messageSource.getMessage("msg.region-controller.insert.codeExist", null, locale);
+            throw new IllegalArgumentException(errorMessage);
         }
+
+        // Se convierte a Entity para almacenar en la base de datos
+        Region region = regionMapper.toEntity(regionCreateDTO);
+        Region savedRegion = regionRepository.save(region);
+        // Se devuelve el DTO
+        return regionMapper.toDTO(savedRegion);
     }
 
-    public ResponseEntity<?> updateRegion(Long id, @Valid RegionCreateDTO regionCreateDTO, Locale locale) {
-        try {
-            logger.info("Actualizando región con ID {}", id);
+    public RegionDTO updateRegion(Long id, RegionCreateDTO regionCreateDTO, Locale locale) {
+        Region existingRegion = regionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("La región no existe."));
 
-            Optional<Region> existingRegion = regionRepository.findById(id);
-            if (!existingRegion.isPresent()) {
-                logger.warn("No se encontró región con ID {}", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("La región no existe.");
-            }
-
-            if (regionRepository.existsRegionByCodeAndNotId(regionCreateDTO.getCode(), id)) {
-                String errorMessage = messageSource.getMessage("msg.region-controller.update.codeExist", null, locale);
-                logger.warn("Error al actualizar región: El código {} ya está en uso.", regionCreateDTO.getCode());
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorMessage);
-            }
-
-            Region regionToUpdate = existingRegion.get();
-            regionToUpdate.setCode(regionCreateDTO.getCode());
-            regionToUpdate.setName(regionCreateDTO.getName());
-
-            Region updatedRegion = regionRepository.save(regionToUpdate);
-
-            logger.info("Región con ID {} actualizada exitosamente.", id);
-            return ResponseEntity.ok(regionMapper.toDTO(updatedRegion));
-        } catch (Exception e) {
-            logger.error("Error al actualizar región con ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la región");
+        if (regionRepository.existsRegionByCodeAndNotId(regionCreateDTO.getCode(), id)) {
+            String errorMessage = messageSource.getMessage("msg.region-controller.update.codeExist", null, locale);
+            throw new IllegalArgumentException(errorMessage);
         }
+
+        existingRegion.setCode(regionCreateDTO.getCode());
+        existingRegion.setName(regionCreateDTO.getName());
+        Region updatedRegion = regionRepository.save(existingRegion);
+
+        return regionMapper.toDTO(updatedRegion);
     }
 
-    public ResponseEntity<?> deleteRegion(Long id) {
-        try {
-            logger.info("Eliminando región con ID {}", id);
-
-            if (!regionRepository.existsById(id)) {
-                logger.warn("No se encontró región con ID {}", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("La región no existe.");
-            }
-
-            regionRepository.deleteById(id);
-
-            logger.info("Región con ID {} eliminada exitosamente.", id);
-            return ResponseEntity.noContent().build();
-        } catch (Exception e) {
-            logger.error("Error al eliminar la región con ID {}: {}", id, e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar la región");
+    public void deleteRegion(Long id) {
+        if (!regionRepository.existsById(id)) {
+            throw new IllegalArgumentException("La región no existe.");
         }
+        regionRepository.deleteById(id);
     }
 }
