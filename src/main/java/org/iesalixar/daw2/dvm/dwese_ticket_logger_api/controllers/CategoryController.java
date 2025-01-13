@@ -2,13 +2,19 @@ package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.controllers;
 
 
 import jakarta.validation.Valid;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.CategoryCreateDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.CategoryDTO;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.repositories.CategoryRepository;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Category;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services.CategoryService;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services.FileStorageService;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services.RegionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -17,6 +23,7 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 
+import javax.swing.text.html.Option;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -30,168 +37,89 @@ import java.util.Optional;
 @RequestMapping("/categories")
 public class CategoryController {
 
+    private static final Logger logger = LoggerFactory.getLogger(RegionController.class);
 
-    private static final Logger logger = LoggerFactory.getLogger(CategoryController.class);
-
-
-    // DAO para gestionar las operaciones de las categorías en la base de datos
     @Autowired
-    private CategoryRepository categoryRepository;
-    @Autowired
-    private MessageSource messageSource;
-    @Autowired
-    private FileStorageService fileStorageService;
+    private CategoryService categoryService;
 
-    /**
-     * Lista todas las categorías y las pasa como atributo al modelo para que sean
-     * accesibles en la vista `category.html`.
-     *
-     * @param model Objeto del modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para renderizar la lista de categorías.
-     */
     @GetMapping
-    public String listCategories(Model model) {
-        logger.info("Solicitando la lista de todas las categorías...");
-        List<Category> listCategories = null;
-        listCategories = categoryRepository.findAll();
-        logger.info("Se han cargado {} categorías.", listCategories.size());
-        model.addAttribute("listCategories", listCategories); // Pasar la lista de categorías al modelo
-        return "category"; // Nombre de la plantilla Thymeleaf a renderizar
+    public ResponseEntity<List<CategoryDTO>> getAllCategories() {
+        logger.info("Solicitando la lista de todas las categorias...");
+        try {
+            List<CategoryDTO> categories = categoryService.getAllCategories();
+            logger.info("Se han encontrado {} categorías.", categories.size());
+            return ResponseEntity.ok(categories);
+        } catch (Exception e) {
+            logger.error("Error al listar las categorias: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
 
+    @GetMapping
+    public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
+        logger.info("Buscando categoría con ID {}", id);
+        try {
+            Optional<CategoryDTO> categoryDTO = categoryService.getCategoryById(id);
 
-    /**
-     * Muestra el formulario para crear una nueva categoría.
-     *
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
-    @GetMapping("/new")
-    public String showNewForm(Model model) {
-        logger.info("Mostrando formulario para nueva categoría.");
-        model.addAttribute("category", new Category()); // Crear un nuevo objeto Category
-        model.addAttribute("parents", categoryRepository.findAll()); // Lista de categorías
-        return "category-form"; // Nombre de la plantilla Thymeleaf para el formulario
-    }
-
-
-    /**
-     * Muestra el formulario para editar una categoría existente.
-     *
-     * @param id    ID de la categoría a editar.
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
-    @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") Long id, Model model) {
-        logger.info("Mostrando formulario de edición para la categoría con ID {}", id);
-        Optional<Category> category = categoryRepository.findById(id);;
-        List<Category> parentCategories = categoryRepository.findAll();
-        model.addAttribute("category", category.get());
-        model.addAttribute("parents", parentCategories); // Lista de categorías
-        return "category-form"; // Nombre de la plantilla Thymeleaf para el formulario
-    }
-
-
-    /**
-     * Inserta una nueva categoría en la base de datos.
-     *
-     * @param category              Objeto que contiene los datos del formulario.
-     * @param redirectAttributes  Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de categorías.
-     */
-    @PostMapping("/insert")
-    public String insertCategory(@Valid @ModelAttribute("category") Category category, BindingResult result, RedirectAttributes redirectAttributes, Model model, Locale locale, @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
-        logger.info("Insertando nueva categoría");
-        // Verificar si hay errores de validación
-        if (result.hasErrors()) {
-            model.addAttribute("parents", categoryRepository.findAll()); // Lista de categorías
-            return "category-form";  // Devuelve el formulario para mostrar los errores de validación
-        }
-        // Verificar si ya existe una categoría con el mismo nombre
-        if (categoryRepository.existsByName(category.getName())) {
-            logger.warn("El nombre de la categoría {} ya existe.", category.getName());
-            String errorMessage = messageSource.getMessage("msg.category-controller.insert.nameExist", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-            return "redirect:/categories/add"; // Redirige al formulario de inserción con el error
-        }
-        // Si el campo 'parent' es null o no válido, asignar null a 'parent'
-        if (category.getParent() != null && category.getParent().getId() == null) {
-            category.setParent(null); // Aseguramos que 'parent' es null si no se seleccionó categoría
-        }
-        // Verificar si se ha subido una imagen
-        if (imageFile != null && !imageFile.isEmpty()) {
-            // Guardar la imagen en el sistema de archivos
-            String fileName = fileStorageService.saveFile(imageFile);
-            if (fileName != null) {
-                category.setImage(fileName); // Guardar el nombre del archivo en la entidad
+            if (categoryDTO.isPresent()) {
+                logger.info("Categoría con ID {} encontrada.", id);
+                return ResponseEntity.ok(categoryDTO.get());
+            } else {
+                logger.warn("No se encontró ninguna categoría con ID {}", id);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("La categoría no existe");
             }
+        } catch (Exception e) {
+            logger.warn("Error al buscar la categoría con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al buscar la categoría.");
         }
-        categoryRepository.save(category);
-        logger.info("Categoría con nombre '{}' insertada con éxito.", category.getName());
-        return "redirect:/categories";
     }
 
-
-    /**
-     * Actualiza una categoría existente en la base de datos.
-     *
-     * @param category              Objeto que contiene los datos del formulario.
-     * @param redirectAttributes  Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de categorías.
-     */
-    @PostMapping("/update")
-    public String updateCategory(@Valid @ModelAttribute("category") Category category, BindingResult result, RedirectAttributes redirectAttributes, Model model, Locale locale,  @RequestParam(value = "imageFile", required = false) MultipartFile imageFile) {
-        logger.info("Actualizando categoría con ID {}", category.getId());
-        if (result.hasErrors()) {
-            model.addAttribute("parents", categoryRepository.findAll()); // Lista de categorías
-            return "category-form";  // Devuelve el formulario para mostrar los errores de validación
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<?> createCategory(@Valid @ModelAttribute CategoryCreateDTO createDTO, Locale locale) {
+        try {
+            CategoryDTO categoryDTO = categoryService.createCategory(createDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(categoryDTO);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al crear la categoría: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            logger.error("Error al guardar la imagen: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al guardar la imagen.");
+        } catch (Exception e) {
+            logger.error("Error inesperado al crear la categoría: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la categoría.");
         }
-        if (categoryRepository.existsCategoryByNameAndNotId(category.getName(), category.getId())) {
-            logger.warn("El nombre de la categoría {} ya existe para otra categoría.", category.getName());
-            String errorMessage = messageSource.getMessage("msg.category-controller.update.nameExist", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-            return "redirect:/categories/edit?id=" + category.getId();
-        }
-        // Si el campo 'parent' es null o una categoría no válida, asignar null a 'parent'
-        if (category.getParent() != null && category.getParent().getId() == null) {
-            category.setParent(null); // Aseguramos que 'parent' es null si no se seleccionó categoría
-        }
-        // Guardar la imagen subida
-        if (imageFile != null && !imageFile.isEmpty()) {
-            // Eliminar la imagen anterior si existe
-            if (category.getImage() != null && !category.getImage().isEmpty()) {
-                fileStorageService.deleteFile(category.getImage()); // Eliminar la imagen anterior
-            }
-            // Guardar la nueva imagen
-            String fileName = fileStorageService.saveFile(imageFile);
-            if (fileName != null) {
-                category.setImage(fileName); // Guardar el nombre del archivo en la entidad
-            }
-        }
-        categoryRepository.save(category);
-        logger.info("Categoría con ID {} actualizada con éxito.", category.getId());
-        return "redirect:/categories"; // Redirigir a la lista de categorías
     }
 
+    @PutMapping(value = "/{id}", consumes = "multipart/form-data")
+    public ResponseEntity<?> updateCategory(@PathVariable Long id, @Valid @ModelAttribute CategoryCreateDTO updateDTO, Locale locale) {
+        try {
+            CategoryDTO updatedCategory = categoryService.updateCategory(id, updateDTO);
+            return ResponseEntity.ok(updatedCategory);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al actualizar la categoría con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (RuntimeException e) {
+            logger.warn("Error al guardar la imagen para la categoría con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al guardar la imagen.");
+        } catch (Exception e) {
+            logger.error("Error inesperado al actualizar la categoría con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la categoría.");
+        }
+    }
 
-    /**
-     * Elimina una categoría de la base de datos.
-     *
-     * @param id                 ID de la categoría a eliminar.
-     * @param redirectAttributes Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de categorías.
-     */
-    @PostMapping("/delete")
-    public String deleteCategory(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         logger.info("Eliminando categoría con ID {}", id);
-        Optional<Category> category = categoryRepository.findById(id);
-        categoryRepository.deleteById(id);
-        // Eliminar la imagen asociada, si existe
-        if (category.get().getImage() != null && !category.get().getImage().isEmpty()) {
-            fileStorageService.deleteFile(category.get().getImage());
+        try {
+            categoryService.deleteCategory(id);
+            return ResponseEntity.ok("Categoría eliminada con éxito.");
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al eliminar la categoría con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error inesperado al eliminar la categoría con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar la categoría.");
         }
-        logger.info("Categoría con ID {} eliminada con éxito.", id);
-        return "redirect:/categories"; // Redirigir a la lista de categorías
     }
 }
