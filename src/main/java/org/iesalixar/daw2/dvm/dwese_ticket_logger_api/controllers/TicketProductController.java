@@ -23,7 +23,7 @@ import java.util.Optional;
 
 
 @Controller
-@RequestMapping("/tickets")
+@RequestMapping("/api/tickets")
 public class TicketProductController {
 
 

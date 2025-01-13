@@ -25,7 +25,7 @@ import java.util.Optional;
  * Utiliza `SupermarketDAO` para interactuar con la base de datos.
  */
 @Controller
-@RequestMapping("/supermarkets")
+@RequestMapping("/api/supermarkets")
 public class SupermarketController {
 
 

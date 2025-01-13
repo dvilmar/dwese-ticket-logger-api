@@ -30,7 +30,7 @@ import java.util.Optional;
  * Utiliza `LocationDAO` para interactuar con la base de datos.
  */
 @Controller
-@RequestMapping("/locations")
+@RequestMapping("/api/locations")
 public class LocationController {
 
 

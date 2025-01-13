@@ -34,7 +34,7 @@ import java.util.Optional;
  * Utiliza `CategoryDAO` para interactuar con la base de datos.
  */
 @Controller
-@RequestMapping("/categories")
+@RequestMapping("/api/categories")
 public class CategoryController {
 
     private static final Logger logger = LoggerFactory.getLogger(RegionController.class);
@@ -55,7 +55,7 @@ public class CategoryController {
         }
     }
 
-    @GetMapping
+    @GetMapping("/{id}")
     public ResponseEntity<?> getCategoryById(@PathVariable Long id) {
         logger.info("Buscando categoría con ID {}", id);
         try {

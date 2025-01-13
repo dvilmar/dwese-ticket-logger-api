@@ -26,7 +26,7 @@ import java.util.Optional;
  * Utiliza `ProvinceDAO` para interactuar con la base de datos.
  */
 @Controller
-@RequestMapping("/provinces")
+@RequestMapping("/api/provinces")
 public class ProvinceController {
 
 

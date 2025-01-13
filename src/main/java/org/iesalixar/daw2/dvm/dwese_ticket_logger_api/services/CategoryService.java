@@ -100,7 +100,7 @@ public class CategoryService {
         }
         // Actualizar los datos de la categoría
         existingCategory.setName(updateDTO.getName());
-        existingCategory.setParent(parentCategory);
+        existingCategory.setParentCategory(parentCategory);
         existingCategory.setImage(fileName);
         // Guardar los cambios
         Category updatedCategory = categoryRepository.save(existingCategory);

@@ -34,7 +34,7 @@ public class Category {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", nullable = true) // Clave foránea a la tabla supermercados.
-    private Category parent;
+    private Category parentCategory;
 
 
     // Campo que almacena el nombre completo de la categoría.
@@ -56,9 +56,9 @@ public class Category {
      * @param name Nombre de la categoría.
      * @param image Imagen de la categoría.
      */
-    public Category(String name, @Nullable String image, @Nullable Category parent) {
+    public Category(String name, @Nullable String image, @Nullable Category parentCategory) {
         this.name = name;
         this.image = image;
-        this.parent = parent;
+        this.parentCategory = parentCategory;
     }
 }

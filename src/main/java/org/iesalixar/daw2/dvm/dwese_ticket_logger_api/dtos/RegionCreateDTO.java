@@ -16,4 +16,5 @@ public class RegionCreateDTO {
     @NotEmpty(message = "{msg.region.name.notEmpty}")
     @Size(max = 100, message = "{msg.region.name.size}")
     private String name;
+
 }
