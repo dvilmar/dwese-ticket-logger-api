@@ -3,10 +3,14 @@ package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.controllers;
 import jakarta.validation.Valid;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionCreateDTO;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.mappers.RegionMapper;
 import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services.RegionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,23 +28,28 @@ public class RegionController {
     @Autowired
     private RegionService regionService;
 
+    @Autowired
+    private RegionMapper regionMapper;
+
     /**
      * Lista todas las regiones almacenadas en la base de datos.
      *
      * @return ResponseEntity con la lista de regiones o un error en caso de fallo.
      */
     @GetMapping
-    public ResponseEntity<List<RegionDTO>> getAllRegions() {
-        logger.info("Solicitando la lista de todas las regiones...");
+    public ResponseEntity<Page<RegionDTO>> getAllRegions(@PageableDefault(size = 10, sort = "name,asc") Pageable pageable) {
+        logger.info("Solicitando la lista de todas las regiones... Página: {}, Tamaño: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
         try {
-            List<RegionDTO> regions = regionService.getAllRegions();
-            logger.info("Se han encontrado {} regiones.", regions.size());
+            Page<RegionDTO> regions = regionService.getAllRegions(pageable);
+            logger.info("Se han encontrado {} regiones.", regions.getTotalElements());
             return ResponseEntity.ok(regions);
         } catch (Exception e) {
-            logger.error("Error al listar las regiones: {}", e.getMessage());
+            logger.error("Error al listar las regiones: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+
 
     /**
      * Obtiene una región específica por su ID.

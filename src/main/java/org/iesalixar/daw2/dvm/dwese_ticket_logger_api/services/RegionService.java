@@ -9,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -34,14 +36,12 @@ public class RegionService {
      *
      * @return Lista de RegionDTO.
      */
-    public List<RegionDTO> getAllRegions() {
-        logger.info("Solicitando todas las regiones...");
+    public Page<RegionDTO> getAllRegions(Pageable pageable) {
+        logger.info("Solicitando todas las regiones...", pageable.getPageNumber(), pageable.getPageSize());
         try {
-            List<Region> regions = regionRepository.findAll();
-            logger.info("Se han encontrado {} regiones.", regions.size());
-            return regions.stream()
-                    .map(regionMapper::toDTO)
-                    .collect(Collectors.toList());
+            Page<Region> regions = regionRepository.findAll(pageable);
+            logger.info("Se han encontrado {} regiones.", regions.getNumberOfElements());
+            return regions.map(regionMapper::toDTO);
         } catch (Exception e) {
             logger.error("Error al obtener la lista de regiones: {}", e.getMessage());
             throw e;
