@@ -1,12 +1,10 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 
 import java.io.File;
 import java.io.IOException;
@@ -15,18 +13,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
-
 @Service
 public class FileStorageService {
 
-
     private static final Logger logger = LoggerFactory.getLogger(FileStorageService.class);
-
 
     // Variable de entorno para la ruta de almacenamiento
     @Value("${UPLOAD_PATH}")
     private String uploadPath;
-
 
     /**
      * Guarda un archivo en el sistema de archivos y devuelve el nombre del archivo guardado.
@@ -40,18 +34,14 @@ public class FileStorageService {
             String fileExtension = getFileExtension(file.getOriginalFilename());
             String uniqueFileName = UUID.randomUUID().toString() + "." + fileExtension;
 
-
             // Ruta completa del archivo
             Path filePath = Paths.get(uploadPath + File.separator + uniqueFileName);
-
 
             // Crear los directorios si no existen
             Files.createDirectories(filePath.getParent());
 
-
             // Guardar el archivo en la ruta
             Files.write(filePath, file.getBytes());
-
 
             logger.info("Archivo {} guardado con éxito.", uniqueFileName);
             return uniqueFileName; // Devolver el nombre del archivo para guardarlo en la base de datos
@@ -60,7 +50,6 @@ public class FileStorageService {
             return null;
         }
     }
-
 
     /**
      * Elimina un archivo del sistema de archivos.
@@ -76,7 +65,6 @@ public class FileStorageService {
             logger.error("Error al eliminar el archivo {}: {}", fileName, e.getMessage());
         }
     }
-
 
     /**
      * Obtiene la extensión del archivo.

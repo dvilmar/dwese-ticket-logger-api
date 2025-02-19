@@ -6,14 +6,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-
 @RestController
 public class HelloController {
 
-
     // Creación del logger para esta clase, nos permitirá registrar mensajes en diferentes niveles (INFO, DEBUG, ERROR, etc.)
     private static final Logger logger = LoggerFactory.getLogger(HelloController.class);
-
 
     /**
      * Método que responde a una petición GET en la ruta "/hello".
@@ -27,16 +24,12 @@ public class HelloController {
         // Loguea cuando el método hello es llamado, mostrando el nombre recibido
         logger.info("Request received to /hello endpoint with parameter name: {}", name);
 
-
         // Formatea y devuelve el mensaje de saludo
         String greeting = String.format("Hello %s!", name);
-
 
         // Loguea el mensaje de saludo que se va a devolver
         logger.debug("Greeting message to be returned: {}", greeting);
 
-
         return greeting;
     }
 }
-

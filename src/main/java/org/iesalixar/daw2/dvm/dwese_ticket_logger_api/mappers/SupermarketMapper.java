@@ -1,32 +1,42 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.mappers;
 
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionCreateDTO;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionDTO;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Region;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.SupermarketCreateDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.SupermarketDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Supermarket;
 import org.springframework.stereotype.Component;
 
+/**
+ * Mapper que convierte entre entidades de tipo {@link Supermarket} y sus DTOs correspondientes.
+ */
 @Component
 public class SupermarketMapper {
 
-    public RegionDTO toDTO(Region region) {
-        RegionDTO dto = new RegionDTO();
-        dto.setId(region.getId());
-        dto.setCode(region.getCode());
-        dto.setName(region.getName());
+    /**
+     * Convierte una entidad {@link Supermarket} en un DTO {@link SupermarketDTO}.
+     *
+     * @param supermarket La entidad a convertir.
+     * @return El DTO resultante.
+     */
+    public SupermarketDTO toDTO(Supermarket supermarket) {
+        if (supermarket == null) {
+            return null;
+        }
+        SupermarketDTO dto = new SupermarketDTO();
+        dto.setId(supermarket.getId());
+        dto.setName(supermarket.getName());
         return dto;
     }
 
-    public Region toEntity(RegionDTO dto) {
-        Region region = new Region();
-        region.setCode(dto.getCode());
-        region.setName(dto.getName());
-        return region;
-    }
-
-    public Region toEntity(RegionCreateDTO createDTO) {
-        Region region = new Region();
-        region.setCode(createDTO.getCode());
-        region.setName(createDTO.getName());
-        return region;
+    /**
+     * Convierte un DTO {@link SupermarketCreateDTO} en una entidad {@link Supermarket}.
+     *
+     * @param createDTO El DTO a convertir.
+     * @return La entidad resultante.
+     */
+    public Supermarket toEntity(SupermarketCreateDTO createDTO) {
+        if (createDTO == null) {
+            return null;
+        }
+        return new Supermarket(createDTO.getName());
     }
 }

@@ -1,27 +1,22 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.config;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.i18n.LocaleChangeInterceptor;
 import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 
-
 import java.util.Locale;
-
 
 @Configuration
 public class LocaleConfig implements WebMvcConfigurer {
 
-
     // Logger para registrar eventos en esta clase
     private static final Logger logger = LoggerFactory.getLogger(LocaleConfig.class);
-
 
     /**
      * Define el `LocaleResolver` que se usará para almacenar la configuración de idioma del usuario.
@@ -37,7 +32,6 @@ public class LocaleConfig implements WebMvcConfigurer {
         return slr;
     }
 
-
     /**
      * Define un `LocaleChangeInterceptor` que intercepta las peticiones HTTP para cambiar el idioma
      * utilizando un parámetro llamado "lang" en la URL.
@@ -52,7 +46,6 @@ public class LocaleConfig implements WebMvcConfigurer {
         return interceptor;
     }
 
-
     /**
      * Registra el `LocaleChangeInterceptor` para que se aplique a todas las solicitudes.
      * Esto permite que el idioma de la aplicación se pueda cambiar dinámicamente.
@@ -65,3 +58,6 @@ public class LocaleConfig implements WebMvcConfigurer {
         logger.info("LocaleChangeInterceptor registrado en el InterceptorRegistry");
     }
 }
+
+
+

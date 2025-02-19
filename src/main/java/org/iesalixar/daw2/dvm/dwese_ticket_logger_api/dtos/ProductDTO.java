@@ -1,21 +1,46 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 
 /**
- * Clase DTO (Data Transfer Object) que representa una categoría.
+ * DTO (Data Transfer Object) que representa un producto con información básica.
  *
- * Esta clase se utiliza para transferir datos de una categoría
- * entre las capas de la aplicación, especialmente para exponerlos
- * a través de la API sin incluir información innecesaria o sensible.
+ * Este DTO se utiliza para transferir los datos de un producto entre las capas de la aplicación,
+ * especialmente en las respuestas de la API.
  */
-@Getter
-@Setter
+@Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProductDTO {
-    private Long id;
-    private String name;
-    private String image;
-    private ParentCategoryDTO parentCategory;
-}
 
+    /**
+     * Identificador único del producto.
+     * <p>
+     * Este campo corresponde al identificador principal (ID) de la entidad `Product` en la base de datos.
+     * </p>
+     * Ejemplo: 1, 2, 3.
+     */
+    private Long id;
+
+    /**
+     * Nombre del producto.
+     * <p>
+     * Representa el nombre del producto tal como aparece en el sistema.
+     * </p>
+     * Ejemplo: "Pan", "Leche", "Arroz".
+     */
+    private String name;
+
+    /**
+     * Precio del producto.
+     * <p>
+     * Representa el precio actual del producto.
+     * </p>
+     * Ejemplo: 1.50, 2.75, 3.99.
+     */
+    private BigDecimal price;
+}

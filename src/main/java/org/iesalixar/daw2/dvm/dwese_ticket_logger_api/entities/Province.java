@@ -1,14 +1,10 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities;
 
-
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*; // Anotaciones de JPA
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
 
@@ -23,17 +19,18 @@ import java.util.List;
  */
 @Entity // Marca esta clase como una entidad JPA.
 @Table(name = "provinces") // Define el nombre de la tabla asociada a esta entidad.
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"locations", "region"}) // Excluir `locations` y `region` para evitar ciclos recursivos.
+@EqualsAndHashCode(exclude = {"locations", "region"}) // Excluir `locations` y `region` para evitar problemas de recursión.
 public class Province {
-
 
     // Campo que almacena el identificador único de la provincia. Es autogenerado y clave primaria.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
 
     // Campo que almacena el código de la provincia, normalmente una cadena corta que identifica la provincia.
     // Ejemplo: "23" para Jaén.
@@ -42,26 +39,21 @@ public class Province {
     @Column(name = "code", nullable = false, length = 2) // Define la columna correspondiente en la tabla.
     private String code;
 
-
     // Campo que almacena el nombre completo de la provincia, como "Sevilla" o "Jaén".
     @NotEmpty(message = "{msg.province.name.notEmpty}")
     @Size(max = 100, message = "{msg.province.name.size}")
     @Column(name = "name", nullable = false, length = 100) // Define la columna correspondiente en la tabla.
     private String name;
 
-
     // Relación uno a muchos con la entidad `Location`. Una provincia puede tener muchas ubicaciones.
     @OneToMany(mappedBy = "province", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Location> locations;
-
 
     // Relación con la entidad `Region`, representando la comunidad autónoma a la que pertenece la provincia.
     @NotNull(message = "{msg.province.region.notNull}")
     @ManyToOne(fetch = FetchType.LAZY) // Relación de muchas provincias a una región.
     @JoinColumn(name = "region_id", nullable = false) // Clave foránea en la tabla provinces que referencia a la tabla regions.
-    @JsonBackReference
     private Region region;
-
 
     /**
      * Constructor que excluye el campo `id`. Se utiliza para crear instancias de `Province`

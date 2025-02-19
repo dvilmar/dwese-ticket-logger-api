@@ -1,91 +1,103 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services;
 
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionCreateDTO;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.RegionDTO;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Region;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.mappers.RegionMapper;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.repositories.RegionRepository;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.SupermarketCreateDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.SupermarketDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Supermarket;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.mappers.SupermarketMapper;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.repositories.SupermarketRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
+/**
+ * Servicio que gestiona las operaciones CRUD para los supermercados.
+ */
 @Service
 public class SupermarketService {
 
     private static final Logger logger = LoggerFactory.getLogger(SupermarketService.class);
 
     @Autowired
-    private RegionRepository regionRepository;
+    private SupermarketRepository supermarketRepository;
 
     @Autowired
-    private RegionMapper regionMapper;
+    private SupermarketMapper supermarketMapper;
 
-    @Autowired
-    private MessageSource messageSource;
-
-    public List<RegionDTO> getAllRegions() {
-        try {
-            logger.info("Obteniendo todas las regiones...");
-            List<Region> regions = regionRepository.findAll();
-            logger.info("Se encontraron {} regiones.", regions.size());
-            return regions.stream()
-                    .map(regionMapper::toDTO)
-                    .toList();
-        } catch (Exception e) {
-            logger.error("Error al obtener todas las regiones: {}", e.getMessage());
-            throw new RuntimeException("Error al obtener todas las regiones.", e);
-        }
+    /**
+     * Obtiene todos los supermercados.
+     *
+     * @return Lista de DTOs de supermercados.
+     */
+    public List<SupermarketDTO> getAllSupermarkets() {
+        logger.info("Obteniendo todos los supermercados...");
+        List<Supermarket> supermarkets = supermarketRepository.findAll();
+        return supermarkets.stream()
+                .map(supermarketMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    public Optional<RegionDTO> getRegionById(Long id) {
-        try {
-            logger.info("Buscando región con ID {}", id);
-            return regionRepository.findById(id).map(regionMapper::toDTO);
-        } catch (Exception e) {
-            logger.error("Error al buscar región con ID {}: {}", id, e.getMessage());
-            throw new RuntimeException("Error al buscar la región.", e);
-        }
+    /**
+     * Obtiene un supermercado por su ID.
+     *
+     * @param id Identificador del supermercado.
+     * @return DTO del supermercado encontrado.
+     */
+    public SupermarketDTO getSupermarketById(Long id) {
+        logger.info("Buscando supermercado con ID {}", id);
+        Supermarket supermarket = supermarketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El supermercado no existe."));
+        return supermarketMapper.toDTO(supermarket);
     }
 
-    public RegionDTO createRegion(RegionCreateDTO regionCreateDTO, Locale locale) {
-        if (regionRepository.existsByCode(regionCreateDTO.getCode())) {
-            String errorMessage = messageSource.getMessage("msg.region-controller.insert.codeExist", null, locale);
-            throw new IllegalArgumentException(errorMessage);
+    /**
+     * Crea un nuevo supermercado.
+     *
+     * @param createDTO DTO con los datos del supermercado a crear.
+     * @return DTO del supermercado creado.
+     */
+    public SupermarketDTO createSupermarket(SupermarketCreateDTO createDTO) {
+        logger.info("Creando un nuevo supermercado con nombre {}", createDTO.getName());
+        if (supermarketRepository.existsByName(createDTO.getName())) {
+            throw new IllegalArgumentException("El nombre del supermercado ya existe.");
         }
-
-        // Se convierte a Entity para almacenar en la base de datos
-        Region region = regionMapper.toEntity(regionCreateDTO);
-        Region savedRegion = regionRepository.save(region);
-        // Se devuelve el DTO
-        return regionMapper.toDTO(savedRegion);
+        Supermarket supermarket = supermarketMapper.toEntity(createDTO);
+        Supermarket savedSupermarket = supermarketRepository.save(supermarket);
+        return supermarketMapper.toDTO(savedSupermarket);
     }
 
-    public RegionDTO updateRegion(Long id, RegionCreateDTO regionCreateDTO, Locale locale) {
-        Region existingRegion = regionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("La región no existe."));
-
-        if (regionRepository.existsRegionByCodeAndNotId(regionCreateDTO.getCode(), id)) {
-            String errorMessage = messageSource.getMessage("msg.region-controller.update.codeExist", null, locale);
-            throw new IllegalArgumentException(errorMessage);
+    /**
+     * Actualiza un supermercado existente.
+     *
+     * @param id        ID del supermercado a actualizar.
+     * @param createDTO DTO con los nuevos datos del supermercado.
+     * @return DTO del supermercado actualizado.
+     */
+    public SupermarketDTO updateSupermarket(Long id, SupermarketCreateDTO createDTO) {
+        logger.info("Actualizando supermercado con ID {}", id);
+        Supermarket existingSupermarket = supermarketRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("El supermercado no existe."));
+        if (supermarketRepository.existsSupermarketByNameAndNotId(createDTO.getName(), id)) {
+            throw new IllegalArgumentException("El nombre del supermercado ya existe.");
         }
-
-        existingRegion.setCode(regionCreateDTO.getCode());
-        existingRegion.setName(regionCreateDTO.getName());
-        Region updatedRegion = regionRepository.save(existingRegion);
-
-        return regionMapper.toDTO(updatedRegion);
+        existingSupermarket.setName(createDTO.getName());
+        Supermarket updatedSupermarket = supermarketRepository.save(existingSupermarket);
+        return supermarketMapper.toDTO(updatedSupermarket);
     }
 
-    public void deleteRegion(Long id) {
-        if (!regionRepository.existsById(id)) {
-            throw new IllegalArgumentException("La región no existe.");
+    /**
+     * Elimina un supermercado por su ID.
+     *
+     * @param id ID del supermercado a eliminar.
+     */
+    public void deleteSupermarket(Long id) {
+        logger.info("Eliminando supermercado con ID {}", id);
+        if (!supermarketRepository.existsById(id)) {
+            throw new IllegalArgumentException("El supermercado no existe.");
         }
-        regionRepository.deleteById(id);
+        supermarketRepository.deleteById(id);
     }
 }

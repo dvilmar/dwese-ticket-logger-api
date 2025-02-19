@@ -22,17 +22,30 @@ import java.nio.file.Paths;
 @RequestMapping("/api/images")
 public class FileStorageController {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegionController.class);
+    private static final Logger logger = LoggerFactory.getLogger(FileStorageController.class);
 
     @Value("${UPLOAD_PATH}")
     private String uploadPath;
 
+    /**
+     * Devuelve un archivo de imagen dado su nombre.
+     *
+     * Este método maneja la solicitud para obtener un archivo almacenado en el servidor.
+     * La ruta del archivo se construye utilizando la variable de entorno definida
+     * para el directorio de almacenamiento (`UPLOAD_PATH`).
+     *
+     * Valida que el archivo exista y sea legible antes de enviarlo como respuesta.
+     * También detecta el tipo MIME para asegurarse de que el cliente pueda procesar correctamente el archivo.
+     *
+     * @param fileName El nombre del archivo a descargar, recibido como parte de la URL.
+     * @return ResponseEntity con el archivo solicitado o un código de error si ocurre algún problema.
+     */
     @GetMapping("/{fileName}")
     public ResponseEntity<Resource> getImage(@PathVariable String fileName) {
         try {
             // Construir la ruta completa del archivo a partir del directorio de almacenamiento y el nombre del archivo.
             Path filePath = Paths.get(uploadPath).resolve(fileName).normalize();
-            // Crear un recurso a partir de la URL del archivo
+            // Crear un recurso a partir de la URI del archivo.
             Resource resource = new UrlResource(filePath.toUri());
             // Verificar si el archivo existe y es accesible.
             if (resource.exists() && resource.isReadable()) {
@@ -42,7 +55,7 @@ public class FileStorageController {
                 if (contentType == null) {
                     // Si no se puede determinar el tipo MIME, se asigna un tipo genérico.
                     contentType = "application/octet-stream";
-                    logger.warn("No se puede detectar el tipo MIME del archivo {}. Se usará el tipo genérico.", fileName);
+                    logger.warn("No se pudo detectar el tipo MIME del archivo {}. Se usará el tipo genérico.", fileName);
                 }
                 // Devolver el archivo con el tipo MIME y configuración adecuada para mostrarlo en línea.
                 return ResponseEntity.ok()
@@ -56,9 +69,11 @@ public class FileStorageController {
                         .body(null);
             }
         } catch (IOException e) {
-            logger.error("Error al enviar el archivo {}: {}", fileName, e.getMessage());
+            logger.error("Error al servir el archivo {}: {}", fileName, e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(null);
         }
     }
+
 }
+

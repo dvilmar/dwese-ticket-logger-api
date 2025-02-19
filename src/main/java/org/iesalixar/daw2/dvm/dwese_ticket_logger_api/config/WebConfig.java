@@ -1,12 +1,10 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.config;
 
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
 
 /**
  * Clase de configuración para habilitar la gestión de recursos estáticos en Spring MVC.
@@ -16,10 +14,8 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-
     // Logger para registrar eventos importantes
     private static final Logger logger = LoggerFactory.getLogger(WebConfig.class);
-
 
     /**
      * Configura los manejadores de recursos estáticos.
@@ -33,11 +29,9 @@ public class WebConfig implements WebMvcConfigurer {
         // Obtener la variable UPLOAD_PATH desde las propiedades del sistema
         String uploadPath = System.getProperty("UPLOAD_PATH");
 
-
         // Verificar si la variable UPLOAD_PATH está configurada
         if (uploadPath != null && !uploadPath.isEmpty()) {
             logger.info("UPLOAD_PATH configurado correctamente: {}", uploadPath);
-
 
             // Configurar Spring para servir archivos desde la ruta obtenida
             //Cuando el servidor reciba una solicitud que coincida con /uploads/**,

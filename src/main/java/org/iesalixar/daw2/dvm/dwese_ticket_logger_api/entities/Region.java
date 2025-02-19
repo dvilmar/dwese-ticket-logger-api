@@ -1,16 +1,9 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities;
 
-
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*; // Anotaciones de JPA
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.Size;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 import java.util.List;
-
 
 /**
  * La clase `Region` representa una entidad que modela una región dentro de la base de datos.
@@ -22,11 +15,13 @@ import java.util.List;
  */
 @Entity // Marca esta clase como una entidad gestionada por JPA.
 @Table(name = "regions") // Especifica el nombre de la tabla asociada a esta entidad.
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"provinces"}) // Excluir `provinces` para evitar ciclos recursivos.
+@EqualsAndHashCode(exclude = {"provinces"}) // Excluir `provinces` para evitar problemas de recursión.
 public class Region {
-
 
     // Campo que almacena el identificador único de la región.
     // Es una clave primaria autogenerada por la base de datos.
@@ -34,28 +29,19 @@ public class Region {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-
     // Campo que almacena el código de la región, normalmente una cadena corta que identifica la región.
     // Ejemplo: "01" para Andalucía.
-    // @NotEmpty(message = "{msg.region.code.notEmpty}")
-    // @Size(max = 2, message = "{msg.region.code.size}")
     @Column(name = "code", nullable = false, length = 2) // Define la columna correspondiente en la tabla.
     private String code;
 
-
     // Campo que almacena el nombre completo de la región, como "Andalucía" o "Cataluña".
-    // @NotEmpty(message = "{msg.region.name.notEmpty}")
-    // @Size(max = 100, message = "{msg.region.name.size}")
     @Column(name = "name", nullable = false, length = 100) // Define la columna correspondiente en la tabla.
     private String name;
-
 
     // Relación uno a muchos con la entidad Province.
     // Una región puede tener muchas provincias.
     @OneToMany(mappedBy = "region", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference
     private List<Province> provinces;
-
 
     /**
      * Este es un constructor personalizado que no incluye el campo `id`.

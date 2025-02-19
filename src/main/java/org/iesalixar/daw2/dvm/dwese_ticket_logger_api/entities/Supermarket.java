@@ -1,14 +1,10 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities;
 
-
-import jakarta.persistence.*; // Anotaciones de JPA
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotEmpty;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.List;
-
 
 /**
  * La clase `Supermarket` representa una entidad que modela un supermercado.
@@ -17,28 +13,27 @@ import java.util.List;
  */
 @Entity // Marca esta clase como una entidad JPA.
 @Table(name = "supermarkets") // Especifica el nombre de la tabla asociada a esta entidad.
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"locations"}) // Excluir `locations` para evitar ciclos recursivos.
+@EqualsAndHashCode(exclude = {"locations"}) // Excluir `locations` para evitar problemas de recursión.
 public class Supermarket {
-
 
     // Identificador único del supermercado. Es autogenerado y clave primaria.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY) // Generación automática del ID.
     private Long id;
 
-
     // Nombre del supermercado. No puede estar vacío.
     @NotEmpty(message = "{msg.supermarket.name.notEmpty}")
     @Column(name = "name", nullable = false) // Define la columna correspondiente en la tabla.
     private String name;
 
-
     // Relación uno a muchos con la entidad `Location`. Un supermercado puede tener muchas ubicaciones.
     @OneToMany(mappedBy = "supermarket", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Location> locations;
-
 
     /**
      * Constructor que excluye el campo `id`. Se utiliza para crear instancias de `Supermarket`

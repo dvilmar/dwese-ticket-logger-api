@@ -1,173 +1,139 @@
 package org.iesalixar.daw2.dvm.dwese_ticket_logger_api.controllers;
 
-
 import jakarta.validation.Valid;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Province;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Supermarket;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.repositories.LocationRepository;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.repositories.ProvinceRepository;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.repositories.SupermarketRepository;
-import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.entities.Location;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.LocationCreateDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.dtos.LocationDTO;
+import org.iesalixar.daw2.dvm.dwese_ticket_logger_api.services.LocationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.MessageSource;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
-
-/**
- * Controlador que maneja las operaciones CRUD para la entidad `Location`.
- * Utiliza `LocationDAO` para interactuar con la base de datos.
- */
-@Controller
+@RestController
 @RequestMapping("/api/locations")
 public class LocationController {
 
-
     private static final Logger logger = LoggerFactory.getLogger(LocationController.class);
 
-
-    // DAO para gestionar las operaciones de las localizaciones en la base de datos
     @Autowired
-    private LocationRepository locationRepository;
-    @Autowired
-    private MessageSource messageSource;
-    @Autowired
-    private SupermarketRepository supermarketRepository;
-    @Autowired
-    private ProvinceRepository provinceRepository;
-
+    private LocationService locationService;
 
     /**
-     * Lista todas las localizaciones y las pasa como atributo al modelo para que sean
-     * accesibles en la vista `location.html`.
+     * Lista todas las ubicaciones almacenadas en la base de datos.
      *
-     * @param model Objeto del modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para renderizar la lista de localizaciones.
+     * @return ResponseEntity con la lista de ubicaciones o un mensaje de error.
      */
     @GetMapping
-    public String listLocations(Model model) {
-        logger.info("Solicitando la lista de todas las localizaciones...");
-        List<Location> listLocations = null;
-        listLocations = locationRepository.findAll();
-        logger.info("Se han cargado {} localizaciones.", listLocations.size());
-        model.addAttribute("listLocations", listLocations); // Pasar la lista de localizaciones al modelo
-        return "location"; // Nombre de la plantilla Thymeleaf a renderizar
-    }
-
-
-    /**
-     * Muestra el formulario para crear una nueva localización.
-     *
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
-    @GetMapping("/new")
-    public String showNewForm(Model model) throws SQLException {
-        logger.info("Mostrando formulario para nueva localización.");
-        model.addAttribute("location", new Location()); // Crear un nuevo objeto Location
-        model.addAttribute("provinces", provinceRepository.findAll()); // Lista de provincias
-        model.addAttribute("supermarkets", supermarketRepository.findAll()); // Lista de supermercados
-        return "location-form"; // Nombre de la plantilla Thymeleaf para el formulario
-    }
-
-
-    /**
-     * Muestra el formulario para editar una localización existente.
-     *
-     * @param id    ID de la localización a editar.
-     * @param model Modelo para pasar datos a la vista.
-     * @return El nombre de la plantilla Thymeleaf para el formulario.
-     */
-    @GetMapping("/edit")
-    public String showEditForm(@RequestParam("id") Long id, Model model) {
-        logger.info("Mostrando formulario de edición para la localización con ID {}", id);
-        Optional<Location> location = locationRepository.findById(id);
-        List<Province> provinces = provinceRepository.findAll();
-        List<Supermarket> supermarkets = supermarketRepository.findAll();
-        model.addAttribute("location", location.get());
-        model.addAttribute("provinces", provinces); // Lista de provincias
-        model.addAttribute("supermarkets", supermarkets); // Lista de supermercados
-        return "location-form"; // Nombre de la plantilla Thymeleaf para el formulario
-    }
-
-
-    /**
-     * Inserta una nueva localización en la base de datos.
-     *
-     * @param location              Objeto que contiene los datos del formulario.
-     * @param redirectAttributes  Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de localizaciones.
-     */
-    @PostMapping("/insert")
-    public String insertLocation(@Valid @ModelAttribute("location") Location location, BindingResult result, RedirectAttributes redirectAttributes, Model model, Locale locale) {
-        logger.info("Insertando nueva localización con dirección {}", location.getAddress());
-        if (result.hasErrors()) {
-            model.addAttribute("provinces", provinceRepository.findAll()); // Lista de provincias
-            model.addAttribute("supermarkets", supermarketRepository.findAll()); // Lista de supermercados
-            return "location-form";  // Devuelve el formulario para mostrar los errores de validación
+    public ResponseEntity<List<LocationDTO>> getAllLocations() {
+        logger.info("Solicitando la lista de todas las ubicaciones...");
+        try {
+            List<LocationDTO> locations = locationService.getAllLocations();
+            logger.info("Se han encontrado {} ubicaciones.", locations.size());
+            return ResponseEntity.ok(locations);
+        } catch (Exception e) {
+            logger.error("Error al listar las ubicaciones: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-        if (locationRepository.existsByAddress(location.getAddress())) {
-            logger.warn("El dirección de la localización {} ya existe.", location.getAddress());
-            String errorMessage = messageSource.getMessage("msg.location-controller.insert.addressExist", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-            return "redirect:/locations/new";
-        }
-        locationRepository.save(location);
-        logger.info("Localización {} insertada con éxito.", location.getAddress());
-        return "redirect:/locations"; // Redirigir a la lista de localizaciones
     }
 
-
     /**
-     * Actualiza una localización existente en la base de datos.
+     * Obtiene una ubicación específica por su ID.
      *
-     * @param location              Objeto que contiene los datos del formulario.
-     * @param redirectAttributes  Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de localizaciones.
+     * @param id ID de la ubicación solicitada.
+     * @return ResponseEntity con la ubicación encontrada o un mensaje de error si no existe.
      */
-    @PostMapping("/update")
-    public String updateLocation(@Valid @ModelAttribute("location") Location location, BindingResult result, RedirectAttributes redirectAttributes, Model model, Locale locale) {
-        logger.info("Actualizando localización con ID {}", location.getId());
-        if (result.hasErrors()) {
-            model.addAttribute("provinces", provinceRepository.findAll()); // Lista de provincias
-            model.addAttribute("supermarkets", supermarketRepository.findAll()); // Lista de supermercados
-            return "location-form";  // Devuelve el formulario para mostrar los errores de validación
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getLocationById(@PathVariable Long id) {
+        logger.info("Buscando ubicación con ID {}", id);
+        try {
+            LocationDTO locationDTO = locationService.getLocationById(id);
+            logger.info("Ubicación con ID {} encontrada.", id);
+            return ResponseEntity.ok(locationDTO);
+        } catch (IllegalArgumentException e) {
+            logger.warn("No se encontró ninguna ubicación con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error inesperado al buscar la ubicación con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al buscar la ubicación.");
         }
-        if (locationRepository.existsLocationByAddressAndNotId(location.getAddress(), location.getId())) {
-            logger.warn("El dirección de la localización {} ya existe para otra localización.", location.getAddress());
-            String errorMessage = messageSource.getMessage("msg.location-controller.update.addressExist", null, locale);
-            redirectAttributes.addFlashAttribute("errorMessage", errorMessage);
-            return "redirect:/locations/edit?id=" + location.getId();
-        }
-        locationRepository.save(location);
-        logger.info("Localización con ID {} actualizada con éxito.", location.getId());
-        return "redirect:/locations"; // Redirigir a la lista de localizaciones
     }
 
+    /**
+     * Crea una nueva ubicación.
+     *
+     * @param locationCreateDTO DTO con los datos para crear la ubicación.
+     * @param locale Idioma para los mensajes de error.
+     * @return ResponseEntity con la ubicación creada o un mensaje de error.
+     */
+    @PostMapping
+    public ResponseEntity<?> createLocation(
+            @Valid @RequestBody LocationCreateDTO locationCreateDTO,
+            Locale locale) {
+        logger.info("Creando una nueva ubicación con dirección {}", locationCreateDTO.getAddress());
+        try {
+            LocationDTO createdLocation = locationService.createLocation(locationCreateDTO, locale);
+            logger.info("Ubicación creada exitosamente con ID {}", createdLocation.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(createdLocation);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al crear la ubicación: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error inesperado al crear la ubicación: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al crear la ubicación.");
+        }
+    }
 
     /**
-     * Elimina una localización de la base de datos.
+     * Actualiza una ubicación existente.
      *
-     * @param id                 ID de la localización a eliminar.
-     * @param redirectAttributes Atributos para mensajes flash de redirección.
-     * @return Redirección a la lista de localizaciones.
+     * @param id ID de la ubicación a actualizar.
+     * @param locationCreateDTO DTO con los datos para actualizar la ubicación.
+     * @param locale Idioma para los mensajes de error.
+     * @return ResponseEntity con la ubicación actualizada o un mensaje de error.
      */
-    @PostMapping("/delete")
-    public String deleteLocation(@RequestParam("id") Long id, RedirectAttributes redirectAttributes) {
-        logger.info("Eliminando localización con ID {}", id);
-        locationRepository.deleteById(id);
-        logger.info("Localización con ID {} eliminada con éxito.", id);
-        return "redirect:/locations"; // Redirigir a la lista de localizaciones
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateLocation(
+            @PathVariable Long id,
+            @Valid @RequestBody LocationCreateDTO locationCreateDTO,
+            Locale locale) {
+        logger.info("Actualizando ubicación con ID {}", id);
+        try {
+            LocationDTO updatedLocation = locationService.updateLocation(id, locationCreateDTO, locale);
+            logger.info("Ubicación con ID {} actualizada exitosamente.", id);
+            return ResponseEntity.ok(updatedLocation);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al actualizar la ubicación con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error inesperado al actualizar la ubicación con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al actualizar la ubicación.");
+        }
+    }
+
+    /**
+     * Elimina una ubicación por su ID.
+     *
+     * @param id ID de la ubicación a eliminar.
+     * @return ResponseEntity con el resultado de la operación.
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteLocation(@PathVariable Long id) {
+        logger.info("Eliminando ubicación con ID {}", id);
+        try {
+            locationService.deleteLocation(id);
+            logger.info("Ubicación con ID {} eliminada exitosamente.", id);
+            return ResponseEntity.ok("Ubicación eliminada con éxito.");
+        } catch (IllegalArgumentException e) {
+            logger.warn("Error al eliminar la ubicación con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            logger.error("Error inesperado al eliminar la ubicación con ID {}: {}", id, e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error al eliminar la ubicación.");
+        }
     }
 }
